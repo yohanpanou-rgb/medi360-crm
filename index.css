@@ -1,0 +1,167 @@
+import React, { useState } from 'react';
+
+const INIT = [
+  { id: 1, name: 'Αντιγόνη Παπαδοπούλου', phone: '6901234567', email: 'antigo@email.gr',   service: 'Δερματολογία',  visits: 5,  lastVisit: '22/04/2026', status: 'Ενεργός' },
+  { id: 2, name: 'Μένη Κωστοπούλου',       phone: '6912345678', email: 'meni@email.gr',     service: 'Ενδοδοντολογία', visits: 3, lastVisit: '22/04/2026', status: 'Ενεργός' },
+  { id: 3, name: 'Σοφία Μαρκοπούλου',      phone: '6923456789', email: 'sofia@email.gr',    service: 'Αισθητική',     visits: 8,  lastVisit: '21/04/2026', status: 'Ενεργός' },
+  { id: 4, name: 'Δήμητρα Λαζαρίδου',      phone: '6934567890', email: 'dimitra@email.gr',  service: 'Laser',         visits: 12, lastVisit: '21/04/2026', status: 'Ανενεργός' },
+  { id: 5, name: 'Γιώργος Τσιμικάλης',     phone: '6945678901', email: 'giorgos@email.gr',  service: 'Ορθοδοντική',  visits: 2,  lastVisit: '20/04/2026', status: 'Ενεργός' },
+  { id: 6, name: 'Ελένη Νικολάου',         phone: '6956789012', email: 'eleni@email.gr',    service: 'Δερματολογία',  visits: 7,  lastVisit: '19/04/2026', status: 'Ενεργός' },
+];
+
+function Modal({ onClose, onSave }) {
+  const [form, setForm] = useState({ name: '', phone: '', email: '', service: '', status: 'Ενεργός' });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const handleSave = () => {
+    if (!form.name || !form.phone) return;
+    onSave(form);
+  };
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <span className="modal-title">Νέος Ασθενής</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Ονοματεπώνυμο *</label>
+              <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ονοματεπώνυμο" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Τηλέφωνο *</label>
+              <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="69XXXXXXXX" />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="email@example.gr" />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Υπηρεσία</label>
+              <select value={form.service} onChange={e => set('service', e.target.value)}>
+                <option value="">Επιλογή...</option>
+                {['Δερματολογία','Αισθητική','Laser','Ενδοδοντολογία','Ορθοδοντική'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Κατάσταση</label>
+              <select value={form.status} onChange={e => set('status', e.target.value)}>
+                <option>Ενεργός</option>
+                <option>Ανενεργός</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-ghost" onClick={onClose}>Ακύρωση</button>
+          <button className="btn btn-primary" onClick={handleSave}>Αποθήκευση</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Patients() {
+  const [patients, setPatients] = useState(INIT);
+  const [search,   setSearch]   = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [filter, setFilter]     = useState('Όλοι');
+
+  const filtered = patients.filter(p => {
+    const q = search.toLowerCase();
+    const matchSearch = p.name.toLowerCase().includes(q) || p.service.toLowerCase().includes(q) || p.phone.includes(q);
+    const matchFilter = filter === 'Όλοι' || p.status === filter;
+    return matchSearch && matchFilter;
+  });
+
+  const addPatient = (form) => {
+    setPatients(prev => [...prev, {
+      id: Date.now(), ...form,
+      visits: 0,
+      lastVisit: new Date().toLocaleDateString('el-GR').replace(/\//g, '/').slice(0,5) + '/2026'
+    }]);
+    setShowModal(false);
+  };
+
+  return (
+    <div className="page">
+      {showModal && <Modal onClose={() => setShowModal(false)} onSave={addPatient} />}
+
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Ασθενείς</h1>
+          <p className="page-sub">{patients.length} συνολικά · {patients.filter(p => p.status === 'Ενεργός').length} ενεργοί</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Νέος Ασθενής</button>
+      </div>
+
+      {/* Filters row */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="search-wrap" style={{ flex: '1 1 240px', maxWidth: 340 }}>
+          <span className="search-icon">⌕</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Αναζήτηση..." />
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['Όλοι','Ενεργός','Ανενεργός'].map(f => (
+            <button key={f}
+              className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setFilter(f)}>{f}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ασθενής</th>
+                <th className="hide-mobile">Τηλέφωνο</th>
+                <th>Υπηρεσία</th>
+                <th className="hide-mobile">Επισκέψεις</th>
+                <th className="hide-mobile">Τελευταία</th>
+                <th>Κατάσταση</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(p => (
+                <tr key={p.id} style={{ cursor: 'pointer' }}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                        background: 'var(--blue-soft)', color: 'var(--blue)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 12, fontWeight: 600
+                      }}>
+                        {p.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: 13 }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-2)' }}>{p.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="hide-mobile" style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--text-2)' }}>{p.phone}</td>
+                  <td><span className="badge badge-navy">{p.service}</span></td>
+                  <td className="hide-mobile" style={{ color: 'var(--text-2)', textAlign: 'center' }}>{p.visits}</td>
+                  <td className="hide-mobile" style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--text-2)' }}>{p.lastVisit}</td>
+                  <td><span className={`badge ${p.status === 'Ενεργός' ? 'badge-green' : 'badge-gray'}`}>{p.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && (
+            <div className="empty-state">
+              <div className="empty-state-icon">◎</div>
+              <div className="empty-state-text">Δεν βρέθηκαν ασθενείς</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
